@@ -98,12 +98,16 @@ fn main() {
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     let map = world_map();
-    for y in MAP_HEIGHT as usize {
-        for x in MAP_WIDTH as usize{
-            let color = match map {
-                0 => canvas.set_draw_color(Color::RGB(255, 255, 255)),
-                _ => {}
-            }
+
+    for y in 0..MAP_HEIGHT {
+        for x in 0..MAP_WIDTH {
+            let color = match map[y as usize][x as usize] {
+                0 => Color::RGB(255, 255, 255),
+                1 => Color::RGB(100, 100, 100),
+                2 => Color::RGB(50, 50, 50),
+                _ => Color::RGB(0, 0, 0),
+            };
+            canvas.set_draw_color(color);
         }
     }
 
