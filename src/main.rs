@@ -95,12 +95,18 @@ fn main() {
         .unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
-
-    canvas.set_draw_color(Color::RGB(0, 0, 0));
-    canvas.clear();
-    canvas.present();
-
     let mut event_pump = sdl_context.event_pump().unwrap();
+
+    let map = world_map();
+    for y in MAP_HEIGHT as usize {
+        for x in MAP_WIDTH as usize{
+            let color = match map {
+                0 => canvas.set_draw_color(Color::RGB(255, 255, 255)),
+                _ => {}
+            }
+        }
+    }
+
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -112,6 +118,8 @@ fn main() {
                 _ => {}
             }
         }
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.clear();
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
