@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{time::Duration, usize};
 
 use sdl2::{self, event::Event, keyboard::Keycode, pixels::Color, rect::Rect};
 
@@ -6,6 +6,7 @@ const MAP_WIDTH: i32 = 24;
 const MAP_HEIGHT: i32 = 24;
 const SCREEN_WIDTH: u32 = 600;
 const SCREEN_HEIGTH: u32 = 400;
+const TILE_SIZE: i32 = 32;
 
 fn world_map() -> Vec<Vec<i32>> {
     vec![
@@ -109,7 +110,14 @@ fn main() {
             };
             canvas.set_draw_color(color);
             // Hardcoded rect
-            canvas.fill_rect(Rect::new(x * 32, y * 32, 32, 32)).unwrap();
+            canvas
+                .fill_rect(Rect::new(
+                    x * TILE_SIZE,
+                    y * TILE_SIZE,
+                    TILE_SIZE as u32,
+                    TILE_SIZE as u32,
+                ))
+                .unwrap();
         }
     }
 
