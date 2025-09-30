@@ -85,6 +85,28 @@ fn world_map() -> Vec<Vec<i32>> {
     ]
 }
 
+struct Player {
+    pos_x: f32,
+    pos_y: f32,
+    dir_x: f32,
+    dir_y: f32,
+    plane_x: f32,
+    plane_y: f32,
+}
+
+impl Player {
+    fn new() -> Self {
+        Self {
+            pos_x: 22.0,
+            pos_y: 12.0,
+            dir_x: -1.0,
+            dir_y: 0.0,
+            plane_x: 0.0,
+            plane_y: 0.66,
+        }
+    }
+}
+
 fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -97,29 +119,6 @@ fn main() {
 
     let mut canvas = window.into_canvas().build().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
-
-    let map = world_map();
-
-    for y in 0..MAP_HEIGHT {
-        for x in 0..MAP_WIDTH {
-            let color = match map[y as usize][x as usize] {
-                0 => Color::RGB(255, 255, 255),
-                1 => Color::RGB(100, 100, 100),
-                2 => Color::RGB(50, 50, 50),
-                _ => Color::RGB(0, 0, 0),
-            };
-            canvas.set_draw_color(color);
-            // Hardcoded rect
-            canvas
-                .fill_rect(Rect::new(
-                    x * TILE_SIZE,
-                    y * TILE_SIZE,
-                    TILE_SIZE as u32,
-                    TILE_SIZE as u32,
-                ))
-                .unwrap();
-        }
-    }
 
     'running: loop {
         for event in event_pump.poll_iter() {
