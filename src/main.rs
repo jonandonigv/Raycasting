@@ -120,6 +120,62 @@ fn main() {
     let mut canvas = window.into_canvas().build().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
+    let mut player = Player::new();
+    canvas.set_draw_color(Color::RGB(0, 0, 0));
+    canvas.clear();
+
+    for x in 0..SCREEN_WIDTH {
+        // Calculate ray position
+        let camera_x = 2.0 * x as f32 / SCREEN_WIDTH as f32 - 1.0;
+        let ray_dir_x = player.dir_x + player.plane_x * camera_x;
+        let ray_dir_y = player.dir_y + player.plane_y * camera_x;
+
+        // Which box of the map we're in
+        let mut map_x = player.pos_x as i32;
+        let mut map_y = player.pos_y as i32;
+
+        // Lenght of ray from current position to next x or y-side
+        let delta_dist_x = if ray_dir_x == 0.0 {
+            1e30
+        } else {
+            (1.0 / ray_dir_x).abs()
+        };
+        let delta_dist_y = if ray_dir_y == 0.0 {
+            1e30
+        } else {
+            (1.0 / ray_dir_y).abs()
+        };
+
+        let mut side_dist_x = if ray_dir_x < 0.0 {
+            (player.pos_x - map_x as f32) * delta_dist_x
+        } else {
+            (map_x as f32 + 1.0 - player.pos_x)
+        };
+        let mut side_dist_y = if ray_dir_y < 0.0 {
+            (player.pos_y - map_y as f32) * delta_dist_y
+        } else {
+            (map_y as f32 + 1.0 - player.pos_y) * delta_dist_y
+        };
+
+        // What direction to step in x or y direction (either +1 or -1)
+        let step_x = if ray_dir_x < 0.0 { -1 } else { 1 };
+        let step_y = if ray_dir_y < 0.0 { -1 } else { 1 };
+
+        let mut hit = 0;
+        let mut side = 0;
+
+        // Perform DDA
+        while hit == 0 {
+            if side_dist_x < side_dist_y {
+                side_dist_x += delta_dist_x;
+                map_x += step_x;
+                side = 0;
+            } else {
+                todo!();
+            }
+        }
+    }
+
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
