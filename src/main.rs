@@ -1,6 +1,12 @@
 use std::{time::Duration, usize};
 
-use sdl2::{self, event::Event, keyboard::Keycode, pixels::Color, rect::Rect};
+use sdl2::{
+    self,
+    event::Event,
+    keyboard::{Keycode, Scancode},
+    pixels::Color,
+    rect::Rect,
+};
 
 const MAP_WIDTH: i32 = 24;
 const MAP_HEIGHT: i32 = 24;
@@ -120,9 +126,12 @@ fn main() {
     let mut canvas = window.into_canvas().build().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
+    let move_speed = 0.1;
+    let rot_speed = 0.05;
+    let mut world_map = world_map();
     let mut player = Player::new();
-    canvas.set_draw_color(Color::RGB(0, 0, 0));
-    canvas.clear();
+    // canvas.set_draw_color(Color::RGB(0, 0, 0));
+    // canvas.clear();
 
     for x in 0..SCREEN_WIDTH {
         // Calculate ray position
@@ -171,10 +180,54 @@ fn main() {
                 map_x += step_x;
                 side = 0;
             } else {
-                todo!();
+                side_dist_y += delta_dist_y;
+                map_y += step_y;
+                side = 1;
+            }
+            if map_x >= 0 && map_x < MAP_WIDTH as i32 && map_y >= 0 && map_y < MAP_HEIGHT as i32 {
+                if world_map[map_x as usize][map_y as usize] > 0 {
+                    hit = 1;
+                }
+            } else {
+                break;
             }
         }
+        // Calculate distance to the wall
+        let perp_wall_dist = if side == 0 {
+            (map_x as f32 - player.pos_x + (1 - step_x) as f32 / 2.0) / ray_dir_x
+        } else {
+            (map_y as f32 - player.pos_y + (1 - step_y) as f32 / 2.0) / ray_dir_y
+        };
+
+        // Calculate heigth of line to draw on screen
+        let line_height = (SCREEN_HEIGTH as f32 / perp_wall_dist) as i32;
+
+        // Calculate lowest and highest pixel to fill in current stripe
+        let draw_startr = (-line_height / 2 + SCREEN_HEIGTH as i32 / 2).max(0) as i32;
+        let draw_end =
+            (line_height / 2 + SCREEN_HEIGTH as i32 / 2).min(SCREEN_HEIGTH as i32) as i32;
+
+        // Draw the wall slice
+        let color = if side == 1 {
+            Color::RGB(128, 128, 128)
+        } else {
+            Color::RGB(255, 255, 255)
+        };
+        canvas.set_draw_color(color);
+        canvas
+            .draw_line((x as i32, draw_startr), (x as i32, draw_end))
+            .unwrap();
     }
+
+    canvas.set_draw_color(Color::RGB(50, 50, 50));
+    canvas
+        .fill_rect(Rect::new(
+            0,
+            SCREEN_HEIGTH as i32 / 2,
+            SCREEN_WIDTH as u32,
+            (SCREEN_HEIGTH / 2) as u32,
+        ))
+        .unwrap();
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -191,5 +244,18 @@ fn main() {
         canvas.clear();
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+    }
+
+    let keyboard_state = event_pump.keyboard_state();
+    if keyboard_state.is_scancode_pressed(Scancode::W) {
+        println!("W has been pressed");
+        let new_x = player.pos_x + player.dir_x * move_speed;
+        let new_y = player.pos_y + player.dir_y * move_speed;
+        if world_map[new_x as usize][player.pos_y as usize] == 0 {
+            player.pos_x = new_x;
+        }
+        if world_map[player.pos_x as usize][new_y as usize] == 0 {
+            player.pos_y = new_y;
+        }
     }
 }
