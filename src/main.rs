@@ -246,6 +246,7 @@ fn main() {
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 
+    // TODO: There is something wrong with the program but I don't know what its wrong
     let keyboard_state = event_pump.keyboard_state();
     if keyboard_state.is_scancode_pressed(Scancode::W) {
         println!("W has been pressed");
