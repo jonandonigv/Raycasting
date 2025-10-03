@@ -126,6 +126,7 @@ fn main() {
     let mut canvas = window.into_canvas().build().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
+    // TODO: Add player movement.
     let move_speed = 0.1;
     let rot_speed = 0.05;
     let mut world_map = world_map();
@@ -173,7 +174,7 @@ fn main() {
             let mut side_dist_x = if ray_dir_x < 0.0 {
                 (player.pos_x - map_x as f32) * delta_dist_x
             } else {
-                (map_x as f32 + 1.0 - player.pos_x)
+                (map_x as f32 + 1.0 - player.pos_x) * delta_dist_x
             };
             let mut side_dist_y = if ray_dir_y < 0.0 {
                 (player.pos_y - map_y as f32) * delta_dist_y
