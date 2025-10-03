@@ -145,6 +145,9 @@ fn main() {
             }
         }
 
+        // canvas.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.clear();
+
         for x in 0..SCREEN_WIDTH {
             // Calculate ray position
             let camera_x = 2.0 * x as f32 / SCREEN_WIDTH as f32 - 1.0;
@@ -242,8 +245,6 @@ fn main() {
             ))
             .unwrap();
 
-        // canvas.set_draw_color(Color::RGB(0, 0, 0));
-        canvas.clear();
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
