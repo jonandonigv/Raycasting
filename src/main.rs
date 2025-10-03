@@ -111,6 +111,67 @@ impl Player {
             plane_y: 0.66,
         }
     }
+
+    fn move_forward(&mut self, world_map: &Vec<Vec<i32>>, move_speed: f32) {
+        let new_x = self.pos_x + self.dir_x * move_speed;
+        let new_y = self.pos_y + self.dir_y * move_speed;
+
+        // Check collision
+        if world_map[new_x as usize][new_y as usize] == 0 {
+            self.pos_x = new_x;
+            self.pos_y = new_y;
+        }
+    }
+
+    fn move_backward(&mut self, world_map: &Vec<Vec<i32>>, move_speed: f32) {
+        let new_x = self.pos_x - self.dir_x * move_speed;
+        let new_y = self.pos_y - self.dir_y * move_speed;
+
+        if world_map[new_x as usize][new_y as usize] == 0 {
+            self.pos_x = new_x;
+            self.pos_y = new_y;
+        }
+    }
+
+    fn strafe_left(&mut self, world_map: &Vec<Vec<i32>>, move_speed: f32) {
+        let new_x = self.pos_x - self.plane_x * move_speed;
+        let new_y = self.pos_y - self.plane_y * move_speed;
+
+        if world_map[new_x as usize][new_y as usize] == 0 {
+            self.pos_x = new_x;
+            self.pos_y = new_y;
+        }
+    }
+
+    fn strafe_right(&mut self, world_map: &Vec<Vec<i32>>, move_speed: f32) {
+        let new_x = self.pos_x + self.plane_x * move_speed;
+        let new_y = self.pos_y + self.plane_y * move_speed;
+
+        if world_map[new_x as usize][new_y as usize] == 0 {
+            self.pos_x = new_x;
+            self.pos_y = new_y;
+        }
+    }
+
+    fn rotate_left(&mut self, rot_speed: f32) {
+        let old_dir_x = self.dir_x;
+        self.dir_x = self.dir_x * rot_speed.cos() - self.dir_y * rot_speed.sin();
+        self.dir_y = old_dir_x * rot_speed.sin() + self.dir_y * rot_speed.cos();
+
+        let old_plane_x = self.plane_x;
+        self.plane_x = self.plane_x * rot_speed.cos() - self.plane_y * rot_speed.sin();
+        self.plane_y = old_plane_x * rot_speed.sin() + self.plane_y * rot_speed.cos();
+    }
+
+    fn rotate_right(&mut self, rot_speed: f32) {
+        let old_dir_x = self.dir_x;
+        self.dir_x = self.dir_x * (-rot_speed).cos() - self.dir_y * (-rot_speed).sin();
+        self.dir_y = old_dir_x * (-rot_speed).sin() + self.dir_y * (-rot_speed).cos();
+
+        let old_plane_x = self.plane_x;
+        self.plane_x = self.plane_x * (-rot_speed).cos() - self.plane_y * (-rot_speed).sin();
+        self.plane_y = old_plane_x * (-rot_speed).sin() + self.plane_y * (-rot_speed).cos();
+    }
 }
 
 fn main() {
@@ -131,8 +192,6 @@ fn main() {
     let rot_speed = 0.05;
     let mut world_map = world_map();
     let mut player = Player::new();
-    // canvas.set_draw_color(Color::RGB(0, 0, 0));
-    // canvas.clear();
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -147,9 +206,44 @@ fn main() {
             }
         }
 
-        // canvas.set_draw_color(Color::RGB(0, 0, 0));
+        // Handle continupus keyboard input
+        let keyboard_state = event_pump.keyboard_state();
+
+        if keyboard_state.is_scancode_pressed(Scancode::W) {
+            player.move_forward(&world_map, move_speed);
+        }
+        if keyboard_state.is_scancode_pressed(Scancode::S) {
+            player.move_backward(&world_map, move_speed);
+        }
+        if keyboard_state.is_scancode_pressed(Scancode::A) {
+            player.strafe_left(&world_map, move_speed);
+        }
+        if keyboard_state.is_scancode_pressed(Scancode::D) {
+            player.strafe_right(&world_map, move_speed);
+        }
+        if keyboard_state.is_scancode_pressed(Scancode::Left) {
+            player.rotate_left(rot_speed);
+        }
+        if keyboard_state.is_scancode_pressed(Scancode::Right) {
+            player.rotate_right(rot_speed);
+        }
+
+        // Clear screen with ceiling color
+        canvas.set_draw_color(Color::RGB(64, 64, 64));
         canvas.clear();
 
+        // Draw floor
+        canvas.set_draw_color(Color::RGB(50, 50, 50));
+        canvas
+            .fill_rect(Rect::new(
+                0,
+                SCREEN_HEIGTH as i32 / 2,
+                SCREEN_WIDTH as u32,
+                (SCREEN_HEIGTH / 2) as u32,
+            ))
+            .unwrap();
+
+        // Raycasting
         for x in 0..SCREEN_WIDTH {
             // Calculate ray position
             let camera_x = 2.0 * x as f32 / SCREEN_WIDTH as f32 - 1.0;
@@ -225,27 +319,27 @@ fn main() {
             let draw_end =
                 (line_height / 2 + SCREEN_HEIGTH as i32 / 2).min(SCREEN_HEIGTH as i32) as i32;
 
+            // Choose wall color based on wall type and side
+            let wall_type = world_map[map_y as usize][map_x as usize];
+            let base_color = match wall_type {
+                1 => (255, 0, 0),     // Red
+                2 => (0, 255, 0),     // Green
+                3 => (0, 0, 255),     // Blue
+                4 => (255, 255, 0),   // Yellow
+                5 => (255, 0, 255),   // Magenta
+                _ => (255, 255, 255), // White
+            };
             // Draw the wall slice
             let color = if side == 1 {
-                Color::RGB(128, 128, 128)
+                Color::RGB(base_color.0 / 2, base_color.1 / 2, base_color.2 / 2)
             } else {
-                Color::RGB(255, 255, 255)
+                Color::RGB(base_color.0, base_color.1, base_color.2)
             };
             canvas.set_draw_color(color);
             canvas
                 .draw_line((x as i32, draw_startr), (x as i32, draw_end))
                 .unwrap();
         }
-
-        canvas.set_draw_color(Color::RGB(50, 50, 50));
-        canvas
-            .fill_rect(Rect::new(
-                0,
-                SCREEN_HEIGTH as i32 / 2,
-                SCREEN_WIDTH as u32,
-                (SCREEN_HEIGTH / 2) as u32,
-            ))
-            .unwrap();
 
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
