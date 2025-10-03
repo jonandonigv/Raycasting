@@ -245,18 +245,4 @@ fn main() {
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
-
-    // TODO: There is something wrong with the program but I don't know what its wrong
-    let keyboard_state = event_pump.keyboard_state();
-    if keyboard_state.is_scancode_pressed(Scancode::W) {
-        println!("W has been pressed");
-        let new_x = player.pos_x + player.dir_x * move_speed;
-        let new_y = player.pos_y + player.dir_y * move_speed;
-        if world_map[new_x as usize][player.pos_y as usize] == 0 {
-            player.pos_x = new_x;
-        }
-        if world_map[player.pos_x as usize][new_y as usize] == 0 {
-            player.pos_y = new_y;
-        }
-    }
 }
