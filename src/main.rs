@@ -136,6 +136,7 @@ fn main() {
 
     'running: loop {
         for event in event_pump.poll_iter() {
+            // TODO: Add player movement.
             match event {
                 Event::Quit { .. }
                 | Event::KeyDown {
