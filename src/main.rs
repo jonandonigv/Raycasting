@@ -12,7 +12,6 @@ const MAP_WIDTH: i32 = 24;
 const MAP_HEIGHT: i32 = 24;
 const SCREEN_WIDTH: u32 = 600;
 const SCREEN_HEIGTH: u32 = 400;
-const TILE_SIZE: i32 = 32;
 
 fn world_map() -> Vec<Vec<i32>> {
     vec![
