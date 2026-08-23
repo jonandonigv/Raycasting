@@ -72,9 +72,40 @@ fn main() {
 
         canvas.present();
 
-        let elapsed = frame_start.elapsed();
-        if elapsed < frame_time {
-            ::std::thread::sleep(frame_time - elapsed);
-        }
+        pace_frame(frame_start, frame_time);
+    }
+}
+
+const SPIN_THRESHOLD: Duration = Duration::from_micros(1500);
+
+fn pace_frame(frame_start: Instant, frame_time: Duration) {
+    let Some(remaining) = frame_time.checked_sub(frame_start.elapsed()) else {
+        return;
+    };
+    if remaining > SPIN_THRESHOLD {
+        ::std::thread::sleep(remaining - SPIN_THRESHOLD);
+    }
+    while frame_start.elapsed() < frame_time {
+        ::std::hint::spin_loop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pace_frame_never_returns_before_target() {
+        let start = Instant::now();
+        pace_frame(start, Duration::from_millis(8));
+        assert!(start.elapsed() >= Duration::from_millis(8));
+    }
+
+    #[test]
+    fn pace_frame_returns_immediately_when_frame_overran() {
+        let start = Instant::now();
+        ::std::thread::sleep(Duration::from_millis(5));
+        pace_frame(start, Duration::from_millis(2));
+        assert!(start.elapsed() < Duration::from_millis(100));
     }
 }
