@@ -1,3 +1,5 @@
+use crate::map::{Map, is_wall};
+
 pub struct Player {
     pub pos_x: f32,
     pub pos_y: f32,
@@ -19,41 +21,41 @@ impl Player {
         }
     }
 
-    pub fn move_forward(&mut self, world_map: &Vec<Vec<i32>>, move_speed: f32) {
+    pub fn move_forward(&mut self, world_map: &Map, move_speed: f32) {
         let new_x = self.pos_x + self.dir_x * move_speed;
         let new_y = self.pos_y + self.dir_y * move_speed;
 
-        if world_map[new_y as usize][new_x as usize] == 0 {
+        if !is_wall(world_map, new_x.floor() as i32, new_y.floor() as i32) {
             self.pos_x = new_x;
             self.pos_y = new_y;
         }
     }
 
-    pub fn move_backward(&mut self, world_map: &Vec<Vec<i32>>, move_speed: f32) {
+    pub fn move_backward(&mut self, world_map: &Map, move_speed: f32) {
         let new_x = self.pos_x - self.dir_x * move_speed;
         let new_y = self.pos_y - self.dir_y * move_speed;
 
-        if world_map[new_y as usize][new_x as usize] == 0 {
+        if !is_wall(world_map, new_x.floor() as i32, new_y.floor() as i32) {
             self.pos_x = new_x;
             self.pos_y = new_y;
         }
     }
 
-    pub fn strafe_left(&mut self, world_map: &Vec<Vec<i32>>, move_speed: f32) {
+    pub fn strafe_left(&mut self, world_map: &Map, move_speed: f32) {
         let new_x = self.pos_x - self.plane_x * move_speed;
         let new_y = self.pos_y - self.plane_y * move_speed;
 
-        if world_map[new_y as usize][new_x as usize] == 0 {
+        if !is_wall(world_map, new_x.floor() as i32, new_y.floor() as i32) {
             self.pos_x = new_x;
             self.pos_y = new_y;
         }
     }
 
-    pub fn strafe_right(&mut self, world_map: &Vec<Vec<i32>>, move_speed: f32) {
+    pub fn strafe_right(&mut self, world_map: &Map, move_speed: f32) {
         let new_x = self.pos_x + self.plane_x * move_speed;
         let new_y = self.pos_y + self.plane_y * move_speed;
 
-        if world_map[new_y as usize][new_x as usize] == 0 {
+        if !is_wall(world_map, new_x.floor() as i32, new_y.floor() as i32) {
             self.pos_x = new_x;
             self.pos_y = new_y;
         }

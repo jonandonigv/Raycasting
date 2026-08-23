@@ -11,8 +11,8 @@ mod constants;
 mod map;
 mod player;
 
-use constants::{MAP_HEIGHT, MAP_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH};
-use map::world_map;
+use constants::{SCREEN_HEIGHT, SCREEN_WIDTH};
+use map::{Map, WORLD_MAP, is_wall, wall_type};
 use player::Player;
 
 fn main() {
@@ -30,7 +30,7 @@ fn main() {
 
     let move_speed = 0.1;
     let rot_speed = 0.05;
-    let world_map = world_map();
+    let world_map: &Map = &WORLD_MAP;
     let mut player = Player::new();
 
     'running: loop {
@@ -48,16 +48,16 @@ fn main() {
         let keyboard_state = event_pump.keyboard_state();
 
         if keyboard_state.is_scancode_pressed(Scancode::W) {
-            player.move_forward(&world_map, move_speed);
+            player.move_forward(world_map, move_speed);
         }
         if keyboard_state.is_scancode_pressed(Scancode::S) {
-            player.move_backward(&world_map, move_speed);
+            player.move_backward(world_map, move_speed);
         }
         if keyboard_state.is_scancode_pressed(Scancode::A) {
-            player.strafe_left(&world_map, move_speed);
+            player.strafe_left(world_map, move_speed);
         }
         if keyboard_state.is_scancode_pressed(Scancode::D) {
-            player.strafe_right(&world_map, move_speed);
+            player.strafe_right(world_map, move_speed);
         }
         if keyboard_state.is_scancode_pressed(Scancode::Left) {
             player.rotate_left(rot_speed);
@@ -74,8 +74,8 @@ fn main() {
             .fill_rect(Rect::new(
                 0,
                 SCREEN_HEIGHT as i32 / 2,
-                SCREEN_WIDTH as u32,
-                (SCREEN_HEIGHT / 2) as u32,
+                SCREEN_WIDTH,
+                SCREEN_HEIGHT / 2,
             ))
             .unwrap();
 
@@ -112,10 +112,9 @@ fn main() {
             let step_x = if ray_dir_x < 0.0 { -1 } else { 1 };
             let step_y = if ray_dir_y < 0.0 { -1 } else { 1 };
 
-            let mut hit = 0;
             let mut side = 0;
 
-            while hit == 0 {
+            while !is_wall(world_map, map_x, map_y) {
                 if side_dist_x < side_dist_y {
                     side_dist_x += delta_dist_x;
                     map_x += step_x;
@@ -124,14 +123,6 @@ fn main() {
                     side_dist_y += delta_dist_y;
                     map_y += step_y;
                     side = 1;
-                }
-                if map_x >= 0 && map_x < MAP_WIDTH as i32 && map_y >= 0 && map_y < MAP_HEIGHT as i32
-                {
-                    if world_map[map_y as usize][map_x as usize] > 0 {
-                        hit = 1;
-                    }
-                } else {
-                    break;
                 }
             }
             let perp_wall_dist = if side == 0 {
@@ -142,11 +133,12 @@ fn main() {
 
             let line_height = (SCREEN_HEIGHT as f32 / perp_wall_dist) as i32;
 
-            let draw_start = (-line_height / 2 + SCREEN_HEIGHT as i32 / 2).max(0) as i32;
-            let draw_end =
-                (line_height / 2 + SCREEN_HEIGHT as i32 / 2).min(SCREEN_HEIGHT as i32) as i32;
+            let draw_start = (-line_height / 2 + SCREEN_HEIGHT as i32 / 2).max(0);
+            let draw_end = (line_height / 2 + SCREEN_HEIGHT as i32 / 2).min(SCREEN_HEIGHT as i32);
 
-            let wall_type = world_map[map_y as usize][map_x as usize];
+            let Some(wall_type) = wall_type(world_map, map_x, map_y) else {
+                continue;
+            };
             let base_color = match wall_type {
                 1 => (255, 0, 0),
                 2 => (0, 255, 0),
