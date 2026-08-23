@@ -9,11 +9,11 @@ This project demonstrates the fundamentals of raycasting - a rendering technique
 ## Features
 
 - **Real-time 3D Rendering**: Classic raycasting implementation using the DDA (Digital Differential Analyzer) algorithm
-- **Player Movement**: WASD movement with arrow key rotation and strafing support
-- **Collision Detection**: Player cannot walk through walls
+- **Player Movement**: WASD movement with arrow key rotation and strafing support, scaled by real elapsed time (delta-time)
+- **Collision Detection**: Player has a collision radius and slides along walls; cannot clip through corners
 - **Depth Shading**: Walls are shaded darker when hit on the side for realistic depth
 - **Multiple Wall Types**: 5 different colored wall types
-- **60 FPS Game Loop**: Smooth rendering with frame rate limiting
+- **60 FPS Game Loop**: Delta-timed loop that sleeps only the remaining frame budget
 
 ## Controls
 
@@ -65,14 +65,32 @@ cargo run --release
 
 - **Resolution**: 600x400 pixels
 - **Map Size**: 24x24 grid
-- **Frame Rate**: 60 FPS
+- **Frame Rate**: Target 60 FPS via delta-time pacing
 - **Rendering**: Software-based (no GPU acceleration required)
 
 ### Architecture
 
-- `Player` struct: Manages position, direction, camera plane, and movement
-- `world_map()`: Hardcoded 24x24 game world with 5 wall types
-- Raycasting loop: Casts rays for each screen column, detects wall hits using DDA, calculates distances and draws vertical wall slices
+- `main.rs`: SDL2 setup, input handling, and the delta-timed game loop
+- `renderer.rs`: Pure DDA raycasting (`cast_ray`), wall color mapping (`wall_color`), and frame drawing (`draw_frame`)
+- `player.rs`: Position, direction vector, and camera plane; radius-based collision with independent X/Y resolution (wall sliding) and rotation math
+- `map.rs`: Static 24x24 world grid as a `const` array with bounds-safe accessors (`is_wall`, `wall_type`) that treat out-of-bounds as solid
+- `constants.rs`: Screen/map dimensions, movement/rotation speeds, and target FPS
+- Unit tests live alongside each module under `#[cfg(test)]`; run with `cargo test`
+
+## Development Workflow
+
+This project follows a gitflow-style branching model:
+
+- `master`: production-ready code only
+- `develop`: integration branch; all work merges here first
+- `feature/<name>`: branches cut from `develop` for each change, landed through GitHub PRs with merge commits
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`)
+
+Every PR must pass the verification gate before merging:
+
+```bash
+cargo build && cargo test && cargo clippy --all-targets -- -D warnings && cargo fmt --check
+```
 
 ## Dependencies
 
