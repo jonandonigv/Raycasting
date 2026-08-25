@@ -1,8 +1,11 @@
 use std::time::{Duration, Instant};
 
 use sdl2::{
+    VideoSubsystem,
     event::Event,
     keyboard::{Keycode, Scancode},
+    render::Canvas,
+    video::Window,
 };
 
 mod constants;
@@ -19,18 +22,13 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem
-        .window("Raycast", SCREEN_WIDTH, SCREEN_HEIGHT)
-        .position_centered()
-        .build()
-        .unwrap();
-
-    let mut canvas = window.into_canvas().build().unwrap();
+    let (mut canvas, vsync) = build_canvas(&video_subsystem);
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     let frame_time = Duration::from_nanos(1_000_000_000u64 / TARGET_FPS as u64);
     let world_map: &Map = &WORLD_MAP;
     let mut player = Player::new();
+    let mut fps_counter = FpsCounter::new(Instant::now());
 
     'running: loop {
         let frame_start = Instant::now();
@@ -72,8 +70,36 @@ fn main() {
 
         canvas.present();
 
-        pace_frame(frame_start, frame_time);
+        if !vsync {
+            pace_frame(frame_start, frame_time);
+        }
+
+        if let Some(fps) = fps_counter.tick(frame_start) {
+            let mode = if vsync { " (vsync)" } else { "" };
+            let _ = canvas
+                .window_mut()
+                .set_title(&format!("Raycast - {} FPS{}", fps, mode));
+        }
     }
+}
+
+fn build_canvas(video_subsystem: &VideoSubsystem) -> (Canvas<Window>, bool) {
+    let window = video_subsystem
+        .window("Raycast", SCREEN_WIDTH, SCREEN_HEIGHT)
+        .position_centered()
+        .build()
+        .unwrap();
+    if let Ok(canvas) = window.into_canvas().accelerated().present_vsync().build() {
+        return (canvas, true);
+    }
+
+    let window = video_subsystem
+        .window("Raycast", SCREEN_WIDTH, SCREEN_HEIGHT)
+        .position_centered()
+        .build()
+        .unwrap();
+    let canvas = window.into_canvas().build().unwrap();
+    (canvas, false)
 }
 
 const SPIN_THRESHOLD: Duration = Duration::from_micros(1500);
@@ -87,6 +113,33 @@ fn pace_frame(frame_start: Instant, frame_time: Duration) {
     }
     while frame_start.elapsed() < frame_time {
         ::std::hint::spin_loop();
+    }
+}
+
+struct FpsCounter {
+    frames: u32,
+    window_start: Instant,
+}
+
+impl FpsCounter {
+    fn new(now: Instant) -> Self {
+        Self {
+            frames: 0,
+            window_start: now,
+        }
+    }
+
+    fn tick(&mut self, now: Instant) -> Option<u32> {
+        self.frames += 1;
+        let elapsed = now - self.window_start;
+        if elapsed >= Duration::from_secs(1) {
+            let fps = (self.frames as f64 / elapsed.as_secs_f64()).round() as u32;
+            self.frames = 0;
+            self.window_start = now;
+            Some(fps)
+        } else {
+            None
+        }
     }
 }
 
@@ -107,5 +160,30 @@ mod tests {
         ::std::thread::sleep(Duration::from_millis(5));
         pace_frame(start, Duration::from_millis(2));
         assert!(start.elapsed() < Duration::from_millis(100));
+    }
+
+    #[test]
+    fn fps_counter_reports_once_per_second_and_resets() {
+        let t0 = Instant::now();
+        let mut counter = FpsCounter::new(t0);
+
+        assert_eq!(counter.tick(t0), None);
+        assert_eq!(counter.tick(t0 + Duration::from_millis(500)), None);
+        assert_eq!(counter.tick(t0 + Duration::from_secs(1)), Some(3));
+
+        assert_eq!(counter.tick(t0 + Duration::from_millis(1500)), None);
+        assert_eq!(counter.tick(t0 + Duration::from_secs(2)), Some(2));
+    }
+
+    #[test]
+    fn fps_counter_rounds_to_nearest_whole_frame_rate() {
+        let t0 = Instant::now();
+        let mut counter = FpsCounter::new(t0);
+
+        assert_eq!(counter.tick(t0), None);
+        assert_eq!(counter.tick(t0 + Duration::from_millis(300)), None);
+        assert_eq!(counter.tick(t0 + Duration::from_millis(600)), None);
+        assert_eq!(counter.tick(t0 + Duration::from_millis(900)), None);
+        assert_eq!(counter.tick(t0 + Duration::from_millis(1200)), Some(4));
     }
 }
