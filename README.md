@@ -98,7 +98,7 @@ cargo build && cargo test && cargo clippy --all-targets -- -D warnings && cargo 
 
 ## License
 
-[Add your license here]
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
